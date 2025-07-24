@@ -3,4 +3,4 @@ resource azurerm_resource_group main {
   location = var.resource_group_location
 }
 
-# do things here
+# do things here, no realli...
