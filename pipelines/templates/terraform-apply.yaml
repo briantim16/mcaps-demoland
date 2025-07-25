@@ -1,0 +1,54 @@
+parameters:
+  - name: environment
+  - name: serviceConnection
+
+jobs:
+- deployment: TerraformDeployment
+  displayName: 'Terraform Apply'
+  dependsOn: TerraformPlan
+  #condition: succeeded()
+  condition: and(succeeded(), eq(variables[dependencies.TerraformPlan.outputs['setvarStep.changesPresent']], 'true'))
+  environment: ${{parameters.environment}}
+  variables:
+  - group: ${{parameters.environment}}
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - checkout: self
+        
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            artifact: 'tfplan.${{parameters.environment}}'
+            targetPath: $(System.DefaultWorkingDirectory)/terraform/
+        
+        - task: TerraformInstaller@1
+          name: terraformInstall
+          displayName: 'Terraform Install'
+          inputs:
+            terraformVersion: 'latest'
+
+        - task: TerraformTask@4
+          name: terraformInit
+          displayName: 'Terraform Init'
+          inputs:
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform' # where the Terraform code is at
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: ${{parameters.serviceConnection}}
+            backendAzureRmResourceGroupName: $(backendResourceGroupName)
+            backendAzureRmStorageAccountName: $(backendStorageAccountName)
+            backendAzureRmContainerName: $(backendContainerName)
+            backendAzureRmKey: $(backendKey)
+            backendAzureRmUseEntraIdForAuthentication: true
+
+        - task: TerraformTask@4
+          name: terraformApply
+          displayName: 'Terraform Apply'
+          #condition: and(succeeded(), eq(variables['terraformPlan.changesPresent'], 'true'))
+          inputs:
+            workingDirectory: '$(System.DefaultWorkingDirectory)/terraform'
+            provider: 'azurerm'
+            environmentServiceNameAzureRM: ${{parameters.serviceConnection}}
+            command: 'apply'
+            commandOptions: 'tfplan'

@@ -1,12 +1,6 @@
-variable "resource_group_name" {
-  description = "The name of the resource group to create."
+variable "tenant_id" {
   type        = string
-  default     = "mcaps-demoland-rg"
-
 }
-
-variable "resource_group_location" {
-  description = "The Azure region where the resource group will be created."
+variable "subscription_id" {
   type        = string
-  default     = "westus2"
 }

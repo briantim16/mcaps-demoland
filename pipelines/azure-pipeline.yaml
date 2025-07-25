@@ -1,0 +1,36 @@
+name: $(BuildDefinitionName)$(rev:.r)
+
+trigger:
+  paths:
+    include:
+    - terraform
+
+stages:
+- stage: TerraformDEV
+  displayName: 'Terraform - DEV'  
+  jobs:
+  - template: templates/terraform-plan.yaml
+    parameters:
+      environment: 'DEV'
+      serviceConnection: $(serviceConnectionIdDEV)
+
+  - template: templates/terraform-apply.yaml
+    parameters:
+      environment: 'DEV'
+      serviceConnection: $(serviceConnectionIdDEV)
+
+- stage: TerraformPROD
+  displayName: 'Terraform - PROD'
+  dependsOn: TerraformDEV
+  condition: succeeded()
+  #condition: startsWith(variables['Build.SourceBranch'], 'refs/heads/master') # Runs only if the Branch is 'master'
+  jobs:
+  - template: templates/terraform-plan.yaml
+    parameters:
+      environment: 'PROD'
+      serviceConnection: $(serviceConnectionIdPROD)
+
+  - template: templates/terraform-apply.yaml
+    parameters:
+      environment: 'PROD'
+      serviceConnection: $(serviceConnectionIdPROD)
